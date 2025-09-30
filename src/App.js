@@ -1,3 +1,4 @@
+// src/App.js
 import React, { useState } from "react";
 import {
   Container,
@@ -9,27 +10,41 @@ import {
   Alert,
 } from "@mui/material";
 import UploadFileIcon from "@mui/icons-material/UploadFile";
+import { uploadToDropbox } from "./DropboxUploader"; // 👈 import function
 
 function App() {
   const [file, setFile] = useState(null);
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [message, setMessage] = useState("");
+  const [loading, setLoading] = useState(false);
 
   const handleFileChange = (e) => {
     setFile(e.target.files[0]);
     setMessage("");
   };
 
-  const handleUpload = () => {
+  const handleUpload = async () => {
     if (!file || !name) {
       setMessage("Please select a file and enter a name.");
       return;
     }
-    console.log("File:", file);
-    console.log("Name:", name);
-    console.log("Description:", description);
-    setMessage(`Ready to upload: ${file.name}`);
+
+    try {
+      setLoading(true);
+      setMessage("Uploading...");
+
+      const result = await uploadToDropbox(file);
+
+      console.log("Dropbox response:", result);
+
+      setMessage(`✅ Uploaded ${file.name} to Dropbox successfully!`);
+    } catch (error) {
+      console.error(error);
+      setMessage("❌ Upload failed. Check console for details.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -47,11 +62,7 @@ function App() {
             fullWidth
           >
             Choose File (.fbx/.glb)
-            <input
-              type="file"
-              hidden
-              onChange={handleFileChange}
-            />
+            <input type="file" hidden onChange={handleFileChange} />
           </Button>
           {file && (
             <Typography variant="body2" sx={{ mt: 1 }}>
@@ -84,8 +95,9 @@ function App() {
             color="success"
             fullWidth
             onClick={handleUpload}
+            disabled={loading}
           >
-            Upload Model
+            {loading ? "Uploading..." : "Upload Model"}
           </Button>
         </Box>
 
